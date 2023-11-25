@@ -29,6 +29,7 @@ thread_len2 = 1;
 position = [1000,1000,1000]
 
 class Room(object):
+    animate = 1
     def __init__(self,DRAW_SCENE):
         self.window_name = "Empty"
         self.camera_heading = [0,0,0]
@@ -89,6 +90,7 @@ class Room(object):
         aspect = w / h;
         glOrtho(-aspect, aspect, -1, 1, -1, 1);
     def draw_display(self):
+        # if self.animate:
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         color = [1.0,0.,0.,1.]
         self.look_at_scene()
@@ -96,6 +98,8 @@ class Room(object):
         self.draw_room()
         self.DRAW_SCENE.make_scene()
         glPopMatrix()
+        # else:
+            # pass
         # glutSwapBuffers()
         return
     def window_function(self):

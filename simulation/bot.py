@@ -26,7 +26,7 @@ class Manipulator(object):
         self.DH_PARAMETERS = []
     
     def make_manip(self,DH_TABLE,JOINT_TYPES):
-
+        self.init()
         for i in range(len(DH_TABLE)):
             self.frames.append(Haal())
             # if i > 0 :

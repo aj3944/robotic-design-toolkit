@@ -34,42 +34,6 @@ from whiteroom import Room,thread_len1
 
 
 
-pi = math.pi;
-
-
-
-dh_table = [
-    [ -pi/2, 10, 0 , -pi/2],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 10, 20, -pi/3],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 10, 20, 0],
-]
-
-joint_types =[ 0 for i in dh_table ] 
-joint_values = [  0 for i in dh_table ] 
-
-my_manip = mp()
-
-my_manip.make_manip(dh_table,joint_types);
-
-
-SCENE_1 = Scene()
-
-
-
-SCENE_1.add_object(my_manip.thing)
-
-
-# R = Room(SCENE_1)
-
-
-
-
 class AppOgl(OpenGLFrame):
     # def __init__(self,Scene):
     #   self.scene = Scene
@@ -78,19 +42,20 @@ class AppOgl(OpenGLFrame):
         """Initalize gl states when the frame is created"""
         # GL.glViewport(0, 0, self.width, self.height)
         # GL.glClearColor(0.0, 1.0, 0.0, 0.0) 
-        self.room = Room(SCENE_1)   
         self.start = time.time()
         self.nframes = 0
+    def set_scene(self,SCENE):
+        self.room = Room(SCENE)   
 
     def redraw(self):
         """Render a single frame"""
         self.room.update()
 
 
-        for i in range(len(joint_values)):
-            joint_values[i] += thread_len1*10       
+        # for i in range(len(joint_values)):
+        #     joint_values[i] += thread_len1*10       
 
-        my_manip.set_joint_angles(joint_values);
+        # my_manip.set_joint_angles(joint_values);
 
         tm = time.time() - self.start
         self.nframes += 1

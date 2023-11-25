@@ -37,6 +37,54 @@ from tk_opengl import AppOgl
 
 # VIZUALIZATIONS
 
+# APPLICATION INITIALIZATIONS & SETUPS
+
+
+pi = math.pi;
+
+dh_string = """[
+    [ -pi/2, 10, 0 , -pi/2],
+    [ -pi/2, 0, 0, pi/2 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ -pi/2, 0, 30, pi/2 ],
+    [ pi/2, 10 + 10, 20, -pi/3],
+    [ -pi/2, 0, 30, pi/2 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ -pi/2, 0, 0, pi/2 ],
+    [ pi/2, 10 + 10, 20, 0],
+]"""
+
+dh_table = eval(dh_string)
+
+joint_types =[ 0 for i in dh_table ] 
+joint_values = [  0 for i in dh_table ] 
+
+my_manip = mp()
+
+my_manip.make_manip(dh_table,joint_types);
+
+
+SCENE_1 = Scene()
+
+
+
+SCENE_1.add_object(my_manip.thing)
+
+
+# <ANIMATION LOOP>
+
+def do_animation():
+    global dh_table,joint_types,joint_values
+    for i in range(len(joint_values)):
+        joint_values[i] += thread_len1*10       
+
+    my_manip.set_joint_angles(joint_values);
+
+
+def reset_sim():
+    global dh_table,joint_types,joint_values
+    joint_values =[ 0 for i in dh_table ] 
+    my_manip.set_joint_angles(joint_values);
 
 
 
@@ -86,7 +134,31 @@ viz_robo = AppOgl(window, width=320, height=200)
 viz_robo.animate = 1
 viz_robo.after(100, viz_robo.printContext)
 
+viz_robo.set_scene(SCENE_1)
 
+
+def pause_sim():
+    viz_robo.room.animate = 0
+
+def play_sim():
+    viz_robo.room.animate = 1
+
+
+def load_dh():
+    global dh_table,joint_types,joint_values
+    txt_edit.delete('1.0', tk.END)
+    # print(dir(txt_edit))
+    txt_edit.insert(tk.END, dh_string)
+
+
+def save_dh():
+    global dh_table,joint_types,joint_values
+    text = txt_edit.get(1.0, tk.END)
+    dh_string = text
+    dh_table = eval(dh_string)
+    joint_types =[ 0 for i in dh_table ] 
+    joint_values = [  0 for i in dh_table ] 
+    my_manip.make_manip(dh_table,joint_types);
 
 viz_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 btn_fwd_kin = tk.Button(viz_buttons, text="FK", command=open_file)
@@ -110,9 +182,13 @@ txt_edit = tk.Text(window)
 fr_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 btn_open = tk.Button(fr_buttons, text="Open", command=open_file)
 btn_save = tk.Button(fr_buttons, text="Save As...", command=save_file)
+btn_DHV = tk.Button(fr_buttons, text="DH View", command=load_dh)
+btn_DHS = tk.Button(fr_buttons, text="DH Save", command=save_dh)
 
 btn_open.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 btn_save.grid(row=1, column=0, sticky="ew", padx=5)
+btn_DHV.grid(row=2, column=1, sticky="ew", padx=5)
+btn_DHS.grid(row=3, column=1, sticky="ew", padx=5)
 
 
 
@@ -127,40 +203,12 @@ viz_buttons.grid(row=1, column=0, sticky="ns")
 
 
 
+def task():
+    if viz_robo.room.animate:
+        do_animation()
+    window.after(200, task)  # reschedule event in 2 seconds
 
-# APPLICATION INITIALIZATIONS & SETUPS
-
-
-pi = math.pi;
-
-
-
-dh_table = [
-    [ -pi/2, 10, 0 , -pi/2],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 10, 20, -pi/3],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 10, 20, 0],
-]
-
-joint_types =[ 0 for i in dh_table ] 
-joint_values = [  0 for i in dh_table ] 
-
-my_manip = mp()
-
-my_manip.make_manip(dh_table,joint_types);
-
-
-SCENE_1 = Scene()
-
-
-
-SCENE_1.add_object(my_manip.thing)
-
+window.after(2000, task)
 
 
 
