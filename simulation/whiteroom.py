@@ -35,7 +35,8 @@ class Room(object):
         self.window_function()
         self.DRAW_SCENE = DRAW_SCENE
     def update(self):
-        self.draw_function()
+        self.draw_display()
+        # pass
     def look_at_scene(self):
         # glMatrixMode(GL_PROJECTION)
         d = math.sqrt(sum([x*x for x in position]))
@@ -55,7 +56,7 @@ class Room(object):
     def keyboard_funtion(self,*args):
         global position,thread_len1,thread_len2
         d = math.sqrt(sum([x*x for x in position]))
-        key = str(args[0],'utf-8')
+        key = args[0]
         print(key)
         if key == ' ':
             snap_zero = True
@@ -77,10 +78,16 @@ class Room(object):
             thread_len2 += 0.1
         if key == '.':
             thread_len2 -= 0.1
-        print(key)
-        print("\t\tThread len 1: ",thread_len1)
-        print("\t\tThread len 2: ",thread_len2)
+        # print(key)
+        # print("\t\tThread len 1: ",thread_len1)
+        # print("\t\tThread len 2: ",thread_len2)
         # print(position)
+
+    def resize(self,w,h):
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity()
+        aspect = w / h;
+        glOrtho(-aspect, aspect, -1, 1, -1, 1);
     def draw_display(self):
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         color = [1.0,0.,0.,1.]
@@ -89,19 +96,19 @@ class Room(object):
         self.draw_room()
         self.DRAW_SCENE.make_scene()
         glPopMatrix()
-        glutSwapBuffers()
+        # glutSwapBuffers()
         return
     def window_function(self):
-        glutInit(sys.argv)
-        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-        glutInitWindowSize(300,300)
-        glutCreateWindow(self.window_name)
+        glutInit()
+        # glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+        # glutInitWindowSize(300,300)
+        # glutCreateWindow(self.window_name)
 
         glClearColor(0.,0.,0.,1.)
         glShadeModel(GL_SMOOTH)
         glEnable(GL_DEPTH_TEST)
-        glutKeyboardFunc(self.keyboard_funtion)
-        glutDisplayFunc(self.draw_display)
+        # glutKeyboardFunc(self.keyboard_funtion)
+        # glutDisplayFunc(self.draw_display)
         glMatrixMode(GL_PROJECTION)
         gluPerspective(40.,1.,1.,40.)
         glMatrixMode(GL_MODELVIEW)
@@ -119,54 +126,20 @@ class Room(object):
 
 # _CELESTIAL_SPHERE_ = Thing(glutWireSphere,(1,20,20))
 
-pi = math.pi;
 
 
+# while 21:
+#     R.update()
 
-dh_table = [
-    [ -pi/2, 10, 0 , -pi/2],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 10, 20, -pi/3],
-    [ -pi/2, 0, 30, pi/2 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ -pi/2, 0, 0, pi/2 ],
-    [ pi/2, 10 + 10, 20, 0],
-]
+#     for i in range(len(joint_values)):
+#         joint_values[i] += thread_len1*10
+#     # joint_values = [
+#     #     thread_len1*5,
+#     #     thread_len2*5,
+#     #     0
+#     # ]
 
-joint_types =[ 0 for i in dh_table ] 
-joint_values = [  0 for i in dh_table ] 
-
-my_manip = mp()
-
-my_manip.make_manip(dh_table,joint_types);
-
-
-SCENE_1 = Scene()
-
-
-
-SCENE_1.add_object(my_manip.thing)
-
-
-R = Room(SCENE_1)
-
-
-
-
-while 21:
-    R.update()
-
-    for i in range(len(joint_values)):
-        joint_values[i] += thread_len1*10
-    # joint_values = [
-    #     thread_len1*5,
-    #     thread_len2*5,
-    #     0
-    # ]
-
-    my_manip.set_joint_angles(joint_values);
-    time.sleep(1/24)
+#     my_manip.set_joint_angles(joint_values);
+#     time.sleep(1/24)
     # for i in range(1000000):
     #     pass

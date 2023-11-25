@@ -20,7 +20,7 @@ class Thing(object):
         location = self.haal.position_P
         glPushMatrix()
         glTranslatef(location[0],location[1],location[2])
-        print(location)
+        # print(location)
         glRotatef(w_degrees,v[0],v[1],v[2])
         self.draw_function(*self.draw_args)
         glPopMatrix()
@@ -46,7 +46,7 @@ class Scene(object):
         glPushMatrix()
         glTranslatef(self.coordinates[0],self.coordinates[1],self.coordinates[2])
         for o in self.objects:
-            print(o)
+            # print(o)
             o.make()
         for s in range(len(self.scenes)):
             scale = self.scales[s]

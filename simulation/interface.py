@@ -1,5 +1,7 @@
 from kivy.app import App
 from kivy.uix.widget import Widget
+from kivy.uix.screenmanager import ScreenManager, Screen
+
 from kivy.properties import (
     NumericProperty, ReferenceListProperty, ObjectProperty
 )
@@ -71,12 +73,27 @@ class PongGame(Widget):
         #     self.player2.center_y = touch.y
 
 
+class PotatoWindow(Widget):
+    def update(self,dt):
+        print(dt)
+
+class ShaderViewer(Widget):
+    pass
+
+class Screen_One(Screen):
+    def update(self,dt):
+        print(dt)
+
+
+class Screen_Two(Screen):
+    def update(self,dt):
+        print(dt)
+
 class PotatoApp(App):
     def build(self):
-        game = PongGame()
-        game.serve_ball()
-        Clock.schedule_interval(game.update, 1.0 / 60.0)
-        return game
+        my_app = PotatoWindow()
+        Clock.schedule_interval(my_app.update, 1.0 / 60.0)
+        return my_app
 
 
 if __name__ == '__main__':
