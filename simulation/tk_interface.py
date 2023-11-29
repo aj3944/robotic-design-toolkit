@@ -217,7 +217,35 @@ def onKeyPress(event):
     viz_robo.room.keyboard_funtion(event.char)
 
 
+
+def onMotion(event):
+    print('\t\tMotion %d %d\n' % (event.x, event.y))
+    viz_robo.room.motion_funtion(event.x,event.y)
+
+
+def onZoom(delta):
+    # print('\tZoom %d %d\n' % (event.delta))
+    # viz_robo.room.zoom_funtion(event.delta)
+    IO = 1 if delta.num > 4.5  else -1;
+    I2 = int(IO)
+    print('\tZoom %f\n' % IO)
+    if IO > 0:
+        viz_robo.room.zoom_funtion(1)
+    else:
+        viz_robo.room.zoom_funtion(-1)
+
+
 window.bind('<KeyPress>', onKeyPress)
+window.bind('<B1-Motion>', onMotion)
+# window.bind('<>', onZoom)
+window.bind('<Button-5>', onZoom)
+window.bind('<Button-4>', onZoom)
+
+# window.bind('<Button-4>', lambda event: onZoom(int(-1*(event.delta/120))))
+# window.bind('<Button-5>', lambda event: onZoom(int(-1*(event.delta/120))))
+
+# window.bind('<B2-Motion>', onMotion)
+# window.bind('<B3-Motion>', onMotion)
 viz_robo.mainloop()
 
 
