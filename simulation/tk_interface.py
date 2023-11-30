@@ -42,6 +42,9 @@ from tk_opengl import AppOgl
 
 pi = math.pi;
 
+dh_string_simple = """[
+    [ -pi/2, 10, 20 , -pi/2],
+]"""
 dh_string = """[
     [ -pi/2, 10, 0 , -pi/2],
     [ -pi/2, 0, 0, pi/2 ],
@@ -54,7 +57,7 @@ dh_string = """[
     [ pi/2, 10 + 10, 20, 0],
 ]"""
 
-dh_table = eval(dh_string)
+dh_table = eval(dh_string_simple)
 
 joint_types =[ 0 for i in dh_table ] 
 joint_values = [  0 for i in dh_table ] 
@@ -160,6 +163,18 @@ def save_dh():
     joint_values = [  0 for i in dh_table ] 
     my_manip.make_manip(dh_table,joint_types);
 
+
+
+
+def btn_draw_axes():
+    my_manip.draw_axes_FLAG = not my_manip.draw_axes_FLAG
+
+def btn_draw_frames():
+    my_manip.draw_frames_FLAG = not my_manip.draw_frames_FLAG
+
+def btn_draw_links():
+    my_manip.draw_link_FLAG = not my_manip.draw_link_FLAG
+
 viz_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 btn_fwd_kin = tk.Button(viz_buttons, text="FK", command=open_file)
 btn_inv_kin = tk.Button(viz_buttons, text="IK", command=save_file)
@@ -175,7 +190,15 @@ btn_pause.grid(row=2, column=0, sticky="ew", padx=5)
 btn_play.grid(row=3, column=0, sticky="ew", padx=5)
 btn_reset.grid(row=4, column=0, sticky="ew", padx=5)
 
+btn_draw_axes = tk.Button(viz_buttons, text="Axes", command=btn_draw_axes)
+btn_draw_frames = tk.Button(viz_buttons, text="Frames", command=btn_draw_frames)
+btn_draw_links = tk.Button(viz_buttons, text="Links", command=btn_draw_links)
 
+
+
+btn_draw_axes.grid(row=2, column=1, sticky="ew", padx=5)
+btn_draw_frames.grid(row=3, column=1, sticky="ew", padx=5)
+btn_draw_links.grid(row=4, column=1, sticky="ew", padx=5)
 
 #  EDITOR AND BUTTONS
 txt_edit = tk.Text(window)
@@ -233,6 +256,18 @@ def onZoom(delta):
         viz_robo.room.zoom_funtion(1)
     else:
         viz_robo.room.zoom_funtion(-1)
+
+
+def onResize(event):
+    # print('\tZoom %d %d\n' % (event.delta))
+    # viz_robo.room.zoom_funtion(event.delta)
+    print('Resize to (%d,%d)\n' % (event.width,event.height))
+    viz_robo.room.resize(event.width,event.height)
+
+
+
+
+# window.bind('<Configure>', onResize)
 
 
 window.bind('<KeyPress>', onKeyPress)

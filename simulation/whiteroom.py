@@ -18,16 +18,45 @@ from quaternion import Quaternion as qt
 from quaternion import Haal
 
 
+# from link_geometry import CoreCube
 
+from bhram import Thing,Scene,bhram_vertex_shader,bhram_fragment_shader
 
-from bhram import Thing,Scene
 from bot import Manipulator as mp
+
+from OpenGL.GL.shaders import compileShader,compileProgram
+
+import shaders as shader
 
 
 thread_len1 = 1;
 thread_len2 = 1;
 position = [1000,1000,1000]
 sign = lambda x: -1 if x < 0 else (1 if x > 0 else 0)
+
+bhram_program = 0
+
+
+# Shader global variables
+shaders_programID         = None
+shaders_frustumID         = None
+shaders_viewID            = None
+shaders_template_location = None
+shaders_position_location = None
+shaders_color_location    = None
+
+# VBO global variables
+template_buffer  = None
+position_buffer  = None
+color_buffer     = None
+template_data    = None
+position_data    = None
+color_data       = None
+VERTEX_SIZE      = 3 # 3 vertices per triangle
+POSITION_SIZE    = 3 # xyz
+COLOR_SIZE       = 3 # rgb
+
+
 
 class Room(object):
     animate = 1
@@ -120,49 +149,102 @@ class Room(object):
             # position = np.add(position,np.cross(position,[0,0,1])*0.1)
 
     def resize(self,w,h):
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity()
-        aspect = w / h;
-        glOrtho(-aspect, aspect, -1, 1, -1, 1);
-    def draw_display(self):
-        # if self.animate:
+        print("<-RESIZE->")
+        # glMatrixMode(GL_PROJECTION);
+        # glLoadIdentity()
+        aspect_ratio = w / h;
+        aspect_ratio = 1.;
+        # glOrtho(-aspect, aspect, -1, 1, -1, 1);
+        glViewport(0, 0, w, h)
+        nearClip, farClip = 10,1000
+        left, right, bottom, top = -200.,200.,-200.,200.
+        glOrtho(left * aspect_ratio, right * aspect_ratio, bottom, top, nearClip,farClip)
+    def draw_display(self):        
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         color = [1.0,0.,0.,1.]
+        
         self.look_at_scene()
+        
         glPushMatrix()
+
         self.draw_room()
         self.DRAW_SCENE.make_scene()
+        
         glPopMatrix()
-        # else:
-            # pass
-        # glutSwapBuffers()
         return
     def window_function(self):
+
         glutInit()
-        # glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-        # glutInitWindowSize(300,300)
-        # glutCreateWindow(self.window_name)
+        
+
+        # self.initShaders()
+        # self.initVBOs()
+        # TODO FIX_SHADERS
+        # bhram_program = compileProgram( 
+        #     compileShader(bhram_vertex_shader, GL_VERTEX_SHADER),
+        #     compileShader(bhram_fragment_shader, GL_FRAGMENT_SHADER))
+
+
 
         glClearColor(0.,0.,0.,1.)
-        glShadeModel(GL_SMOOTH)
+        glLight(GL_LIGHT0, GL_POSITION,  (5, 5, 5, 1)) # point light from the left, top, front
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (0, 0, 0, 1))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1, 1, 1, 1))
+
+
+        glShadeModel(GL_FLAT)
         glEnable(GL_DEPTH_TEST)
-        # glutKeyboardFunc(self.keyboard_funtion)
-        # glutDisplayFunc(self.draw_display)
         glMatrixMode(GL_PROJECTION)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glEnable(GL_COLOR_MATERIAL)
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE )
+
+
+        glUseProgram(bhram_program);
+
+
+
         gluPerspective(40.,1.,1.,40.)
         glMatrixMode(GL_MODELVIEW)
         gluLookAt(0,0,10,
                   0,0,0,
                   0,1,1)
         glPushMatrix()
-        # glutMainLoop()
         return
     def draw_function(self):
         glutPostRedisplay()
         glutMainLoopEvent()
 
+    def initShaders(self):
+        global shaders_programID, shaders_frustumID, shaders_viewID, shaders_template_location, shaders_position_location, shaders_color_location
+        vertex_shader   = shader.compile_shader("VS")
+        fragment_shader = shader.compile_shader("FS")
+        shaders_programID = shader.link_shader_program(vertex_shader, fragment_shader)     
 
+        shaders_template_location = glGetAttribLocation(shaders_programID, "templateVS")
+        shaders_position_location = glGetAttribLocation(shaders_programID, "positionVS")
+        shaders_color_location    = glGetAttribLocation(shaders_programID, "colorVS_in")
 
+        shaders_frustumID = glGetUniformLocation(shaders_programID, "frustum")
+        shaders_viewID = glGetUniformLocation(shaders_programID, "view" )
+    def initVBOs(self):
+        global template_buffer, position_buffer, color_buffer, template_data, position_data
+          
+        # Opengl VBO vertex template buffer created, bound, and filled with vertex template data
+        template_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, template_buffer)
+        glBufferData(GL_ARRAY_BUFFER, template_data, GL_STATIC_DRAW)
+
+        # Opengl VBO cube position buffer created, bound, and filled with cube position data
+        position_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, position_buffer)
+        glBufferData(GL_ARRAY_BUFFER, position_data, GL_STATIC_DRAW)
+
+        # Opengl VBO cube color buffer created, bound, and left empty
+        color_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, color_buffer)
+        glBufferData(GL_ARRAY_BUFFER, None, GL_STREAM_DRAW)
 # _CELESTIAL_SPHERE_ = Thing(glutWireSphere,(1,20,20))
 
 
