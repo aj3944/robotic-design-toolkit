@@ -59,7 +59,7 @@ COLOR_SIZE       = 3 # rgb
 
 
 class Room(object):
-    animate = 1
+    animate = 0
 
     def __init__(self,DRAW_SCENE):
         self.window_name = "Empty"

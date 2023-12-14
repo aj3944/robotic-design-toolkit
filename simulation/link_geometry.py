@@ -12,3 +12,4 @@ vertices.dtype = [
     ('position',    'float32',  (3,)),
     ('colour',      'float32',  (3,)),
 ]
+

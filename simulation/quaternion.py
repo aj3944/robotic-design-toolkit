@@ -1,5 +1,7 @@
 import numpy as np
 from math import sin, cos, acos, sqrt
+from scipy.spatial.transform import Rotation as R
+
 
 def normalize(v, tolerance=0.1):
     mag2 = sum(n * n for n in v)
@@ -86,9 +88,55 @@ class Quaternion:
         return np.linalg.norm(v)
 
 
+
 class Haal(object):
     def __init__(self):
         self.rotation_Q = Quaternion.from_axisangle(0.0,(0,0,1))
         self.position_P = [0,0,0]
     def locate(self,x,y,z):
         self.position_P = [x,y,z]
+    def return_list(self):
+        P = self.position_P
+        Q = self.rotation_Q.tolist()
+        return P, Q 
+
+
+
+class Transformation(object):
+    def __init__(self):
+        self.rotation = R.from_matrix([[1, 0, 0],
+                                       [0, 1, 0],
+                                       [0, 0, 1]])
+        self.translation = [0,0,0]
+        self.T = []
+    def locate(self,x,y,z):
+        self.translation = [x,y,z]
+    def T_matrix(self):
+        T = [[1,0,0,0,],
+             [0,1,0,0,],
+             [0,0,1,0,],
+             [0,0,0,1,],]
+        # print("ROTATION",self.rotation)
+
+        rot_mat = self.rotation.as_matrix();
+
+        # print("ROTATION MATRIX",rot_mat)
+        T[0][0] = rot_mat[0][0]
+        T[0][1] = rot_mat[0][1]
+        T[0][2] = rot_mat[0][2]
+
+        T[1][0] = rot_mat[1][0]
+        T[1][1] = rot_mat[1][1]
+        T[1][2] = rot_mat[1][2]
+
+        T[2][0] = rot_mat[2][0]
+        T[2][1] = rot_mat[2][1]
+        T[2][2] = rot_mat[2][2]
+
+        T[0][3] = self.translation[0]
+        T[1][3] = self.translation[1]
+        T[2][3] = self.translation[2]
+
+        self.T = np.array(T);
+
+        return self.T 

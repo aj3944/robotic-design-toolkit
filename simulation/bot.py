@@ -5,15 +5,27 @@ from OpenGL.GL import *
 import numpy as np
 import math
 from quaternion import Quaternion as qt
-from quaternion import Haal
+from quaternion import Haal,Transformation
 
 from bhram import Thing,Scene
+from math import sin, cos, acos, sqrt
 
+from scipy.spatial.transform import Rotation as R
 
-rad_2_deg = 180/math.pi;
+rad_2_deg = 180./math.pi;
+deg_2_rad = math.pi/180.;
+
+def normalize(v):
+    norm=np.linalg.norm(v)
+    if norm==0:
+        norm=np.finfo(v.dtype).eps
+    return v/norm
 
 
 class Manipulator(object):
+
+    goal = Haal()
+
     def __init__(self):
         name = "manipulator"
         self.thing = Thing(self.draw_func, [])
@@ -21,12 +33,13 @@ class Manipulator(object):
         self.draw_axes_FLAG = False;
         self.draw_frames_FLAG = False;
         self.draw_link_FLAG = True;
+        self.draw_FK = True;
     def init(self):
         self.joint_values = []
         self.links = []
         self.frames = []
         self.DH_PARAMETERS = []
-    
+        self.FORWARD = Transformation()
     def make_manip(self,DH_TABLE,JOINT_TYPES):
         self.init()
         for i in range(len(DH_TABLE)):
@@ -45,7 +58,25 @@ class Manipulator(object):
     def draw_func(self):
 
         # self.thing.locate(100,100,100)
-        
+ 
+
+        if self.draw_FK:
+            # glRotatef(link_twi,1,0,0)
+            pos = self.FORWARD.translation
+            rot_mat = np.array(self.FORWARD.rotation.as_matrix())
+            rota = R.from_matrix(rot_mat)
+            rot_vec = rota.as_rotvec(degrees = True)
+
+            theta = np.linalg.norm(rot_vec)
+            v = normalize(rot_vec)
+
+            # glRotatef(theta,v[0],v[1],v[2])
+
+            glPushMatrix()
+            glTranslatef(pos[0],pos[1],pos[2])
+            glColor3f(1.0, 1.0, 0.);
+            glutSolidCube(1)
+            glPopMatrix()       
 
         for i in range(len(self.DH_PARAMETERS)):
             link_rot = self.DH_PARAMETERS[i][0]*rad_2_deg + self.joint_values[i]
@@ -55,30 +86,19 @@ class Manipulator(object):
 
 
             glRotatef(link_twi,1,0,0)
-            glRotatef(link_rot,0,1.,0.)
+            glRotatef(link_rot,0,0.,1.)
+            glTranslatef(0.,0.,link_off)
             glTranslatef(link_len/2,0.,0.)
+            # glTranslatef(0.,0.,link_off/2.)
             glPushMatrix()
 
-            self.draw_link(link_len,i);
+            self.draw_link(link_len,i,link_off);
 
             glPopMatrix()
             glTranslatef(link_len/2,0.,0.)
 
-            # print(t_d_a_a)
-            # glPushMatrix()
-            # glRotatef(t_d_a_a[0],1.0,0.,0.)
-            # glScalef(t_d_a_a[2],t_d_a_a[1],1)
-            # glutSolidCube(link_size)
-            # glTranslatef(link_size/2.,0.,0.)
-            # glRotatef(t_d_a_a[3],0,0,1)
-            # glPopMatrix()
 
-        # for t_d_a_a in self.DH_PARAMETERS:
-        #     glutWireSphere(1,20,20)
-        #     glPopMatrix()
-        # glutWireSphere(1,20,20)
-        # pass
-    def draw_link(self,link_len,i=0):
+    def draw_link(self,link_len,i=0,off= 2):
 
         glPushMatrix();
         glTranslatef(-link_len/2,0,0)
@@ -121,16 +141,84 @@ class Manipulator(object):
         if self.draw_link_FLAG:
             glPushMatrix()        
             glColor3f(1., 1.0,1.);
-            glScalef(link_len,5.,5.)
+            glScalef(link_len,1.,2)
             glutWireCube(1)
             glPopMatrix()
 
 
         # glutSolidCube(1)
-    def do_fk(self):
-        pass
+    def do_fk(self,joint_values):
+        frames = []
+        orig_matrix = Transformation()
+        curr_matrix = Transformation()
+        # print("DHTABLE")
+        # print(self.joint_values)
+        # print(self.DH_PARAMETERS)
+        for i in range(len(self.DH_PARAMETERS)):
+
+
+            theta = self.DH_PARAMETERS[i][0] + self.joint_values[i]*deg_2_rad
+            link_off = self.DH_PARAMETERS[i][1]
+            link_len = self.DH_PARAMETERS[i][2]
+            alpha = -1*self.DH_PARAMETERS[i][3]
+
+            # print("<-----------{0}------------------>\n".format(i))
+            # print(link_rot,link_off,link_len,link_twi)
+            # print("<------------------------------->\n")
+            frame_matrix = Transformation()
+            frame_transform = frame_matrix.T_matrix()
+
+            frame_transform[0][0] = cos(theta);
+            frame_transform[0][1] = -sin(theta)*cos(alpha);
+            frame_transform[0][2] = sin(alpha)*sin(theta);
+            frame_transform[0][3] = link_len*cos(theta);
+
+            frame_transform[1][0] = sin(theta);
+            frame_transform[1][1] = cos(alpha)*cos(theta);
+            frame_transform[1][2] = -sin(alpha)*cos(theta);
+            frame_transform[1][3] = link_len*sin(theta);
+
+            frame_transform[2][1] = sin(alpha);
+            frame_transform[2][2] = cos(alpha);
+            frame_transform[2][3] = link_off;
+
+
+            prev_transform = curr_matrix.T_matrix();
+
+            new_transform = np.matmul(prev_transform,frame_transform);
+    
+            curr_matrix.rotation = R.from_matrix(new_transform[:3,:3]);
+            curr_matrix.translation = list(np.ndarray.flatten(new_transform[:-1,-1:]));
+
+
+            print("<-----------{0}------------------>\n".format(i));
+            print(new_transform);
+            print("<------------------------------->\n");
+
+
+            frame_matrix = Transformation()
+
+            # new_x = curr_haal.position_P[0] + cos(link_rot)*link_len
+            # new_y = curr_haal.position_P[1] + sin(link_rot)*link_len
+            # new_z = curr_haal.position_P[2] + link_off
+
+            # rotate = qt.from_axisangle(link_rot,[1,0,0])
+            # twist = qt.from_axisangle(link_twi,[0,0,1])
+
+            # haal_frame.position_P = [new_x,new_y,new_z ]
+            # haal_frame.rotation_Q  = curr_haal.rotation_Q*rotate*twist
+
+        self.FORWARD = curr_matrix
+
     def do_ik(self,goal):
-        pass
+        
+        trajectory = [self.joint_values]
+
+
+
+        return trajectory
+
+
     def do_id(self,wrench_force):
         pass
     def compute_ws(self):
@@ -139,9 +227,3 @@ class Manipulator(object):
         pass
 
         
-
-
-
-
-
-mp1 = Manipulator();
