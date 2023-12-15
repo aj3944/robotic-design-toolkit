@@ -29,7 +29,7 @@ from OpenGL.GL.shaders import compileShader,compileProgram
 import shaders as shader
 
 
-thread_len1 = 1;
+thread_len1 = 0.01;
 thread_len2 = 1;
 position = [1000,1000,1000]
 sign = lambda x: -1 if x < 0 else (1 if x > 0 else 0)

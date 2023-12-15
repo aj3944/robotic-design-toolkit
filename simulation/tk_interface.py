@@ -99,9 +99,10 @@ SCENE_1.add_object(my_manip.thing)
 def do_animation():
     global dh_table,joint_types,joint_values
     for i in range(len(joint_values)):
-        joint_values[i] += thread_len1*1       
+        joint_values[i] += thread_len1       
 
     my_manip.set_joint_angles(joint_values);
+    my_manip.do_fk(joint_values)
 
 
 def reset_sim():

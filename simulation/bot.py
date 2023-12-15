@@ -63,30 +63,38 @@ class Manipulator(object):
         if self.draw_FK:
             # glRotatef(link_twi,1,0,0)
             pos = self.FORWARD.translation
-            rot_mat = np.array(self.FORWARD.rotation.as_matrix())
-            rota = R.from_matrix(rot_mat)
+            # rot_mat = np.array(self.FORWARD.rotation.as_matrix())
+
+            fk_matrix = np.array(self.FORWARD.T_matrix());
+
+            rota = R.from_matrix(fk_matrix[:3,:3])
             rot_vec = rota.as_rotvec(degrees = True)
 
             theta = np.linalg.norm(rot_vec)
             v = normalize(rot_vec)
 
-            # glRotatef(theta,v[0],v[1],v[2])
-
             glPushMatrix()
             glTranslatef(pos[0],pos[1],pos[2])
+            glRotatef(theta,v[0],v[1],v[2])
+            # glMatrixMode(GL_MODELVIEW)
+            # glLoadIdentity()
+            # modelViewMatrix = glGetDoublev(GL_MODELVIEW_MATRIX)
+            # print(fk_matrix)
+            # glMultMatrixf(fk_matrix)
             glColor3f(1.0, 1.0, 0.);
             glutSolidCube(1)
             glPopMatrix()       
+        
 
         for i in range(len(self.DH_PARAMETERS)):
-            link_rot = self.DH_PARAMETERS[i][0]*rad_2_deg + self.joint_values[i]
+            link_rot = (self.DH_PARAMETERS[i][0] + self.joint_values[i])*rad_2_deg
             link_off = self.DH_PARAMETERS[i][1]            
             link_len = self.DH_PARAMETERS[i][2]
             link_twi = self.DH_PARAMETERS[i][3]*rad_2_deg
 
 
-            glRotatef(link_twi,1,0,0)
             glRotatef(link_rot,0,0.,1.)
+            glRotatef(link_twi,1,0,0)
             glTranslatef(0.,0.,link_off)
             glTranslatef(link_len/2,0.,0.)
             # glTranslatef(0.,0.,link_off/2.)
@@ -156,11 +164,11 @@ class Manipulator(object):
         # print(self.DH_PARAMETERS)
         for i in range(len(self.DH_PARAMETERS)):
 
-
-            theta = self.DH_PARAMETERS[i][0] + self.joint_values[i]*deg_2_rad
+            print(self.joint_values)
+            theta = self.DH_PARAMETERS[i][0] + self.joint_values[i]
             link_off = self.DH_PARAMETERS[i][1]
             link_len = self.DH_PARAMETERS[i][2]
-            alpha = -1*self.DH_PARAMETERS[i][3]
+            alpha = self.DH_PARAMETERS[i][3]
 
             # print("<-----------{0}------------------>\n".format(i))
             # print(link_rot,link_off,link_len,link_twi)
@@ -178,6 +186,7 @@ class Manipulator(object):
             frame_transform[1][2] = -sin(alpha)*cos(theta);
             frame_transform[1][3] = link_len*sin(theta);
 
+            frame_transform[2][0] = 0;
             frame_transform[2][1] = sin(alpha);
             frame_transform[2][2] = cos(alpha);
             frame_transform[2][3] = link_off;
@@ -194,9 +203,6 @@ class Manipulator(object):
             print("<-----------{0}------------------>\n".format(i));
             print(new_transform);
             print("<------------------------------->\n");
-
-
-            frame_matrix = Transformation()
 
             # new_x = curr_haal.position_P[0] + cos(link_rot)*link_len
             # new_y = curr_haal.position_P[1] + sin(link_rot)*link_len
