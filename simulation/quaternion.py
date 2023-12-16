@@ -111,6 +111,14 @@ class Transformation(object):
         self.T = []
     def locate(self,x,y,z):
         self.translation = [x,y,z]
+    def from_value(T):
+
+        new_t = Transformation();
+        new_t.T = np.array(T);
+        print(T)
+        new_t.rotation = R.from_matrix(new_t.T[:3,:3]);
+        new_t.translation = list(np.ndarray.flatten(new_t.T[:-1,-1:]));
+        return new_t;
     def T_matrix(self):
         T = [[1,0,0,0,],
              [0,1,0,0,],

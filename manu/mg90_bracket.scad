@@ -52,13 +52,13 @@ module base_bracket(){
 
 
 module servo(){
-	mg_90();
+	// mg_90();
 
-	color("white")
-	translate([5,-10,0])
-	rotate([-90,0,0])
-	rotate([0,0,90])
-	import("horns/SG90_four_horns_with_holes.stl");
+	// color("white")
+	// translate([5,-10,0])
+	// rotate([-90,0,0])
+	// rotate([0,0,90])
+	// import("horns/SG90_four_horns_with_holes.stl");
 }
 
 module shoulder_joint(left = 0){
@@ -164,78 +164,78 @@ module shoulder_joint(left = 0){
 
 
 
-// shoulder_joint();
+shoulder_joint();
 
 
-// translate([0,0,5])
-// rotate([0,90,0])
-// difference(){
-// 	hull(){
-// 		translate([0,30,0])
-// 		cube([50,2,50],center=true);
-// 		base_bracket();
-// 	}
-// 	translate([0,15,0])
-// 	cube([34,25,70],center=true);
-// 	translate([0,15,0])
-// 	cube([34,55,14],center=true);
-// }
-
-
-
-// translate([0,150,0])
-// rotate([0,0,180])
-// {
-
-// shoulder_joint(2);
-// translate([0,0,5])
-// rotate([0,90,0])
-// difference(){
-// 	hull(){
-// 		translate([0,30,0])
-// 		cube([50,2,50],center=true);
-// 		base_bracket();
-// 	}
-// 	translate([0,15,0])
-// 	cube([34,25,70],center=true);
-// 	translate([0,15,0])
-// 	cube([34,55,14],center=true);
-// }
-
-// }
+translate([0,0,5])
+rotate([0,90,0])
+difference(){
+	hull(){
+		translate([0,30,0])
+		cube([50,2,50],center=true);
+		base_bracket();
+	}
+	translate([0,15,0])
+	cube([34,25,70],center=true);
+	translate([0,15,0])
+	cube([34,55,14],center=true);
+}
 
 
 
-// translate([-6,-22,-100])
-// cube([4,20,150],center=true);
+translate([0,150,0])
+rotate([0,0,180])
+{
+
+shoulder_joint(2);
+translate([0,0,5])
+rotate([0,90,0])
+difference(){
+	hull(){
+		translate([0,30,0])
+		cube([50,2,50],center=true);
+		base_bracket();
+	}
+	translate([0,15,0])
+	cube([34,25,70],center=true);
+	translate([0,15,0])
+	cube([34,55,14],center=true);
+}
+
+}
 
 
-// translate([-5,-22,-37])
-// rotate([0,90,0])
-// rotate([90,0,0])
-// {
-// 	rotate([0,180,180])
-// 	{
 
-// 		base_bracket();
-// 		servo();
-// 	}
+translate([-6,-22,-100])
+cube([4,20,150],center=true);
+
+
+translate([-5,-22,-37])
+rotate([0,90,0])
+rotate([90,0,0])
+{
+	rotate([0,180,180])
+	{
+
+		base_bracket();
+		servo();
+	}
 	
 
-// 	translate([-18,6,0])
-// 	cube([2,36,30],center=true);		
-// }
+	translate([-18,6,0])
+	cube([2,36,30],center=true);		
+}
 
 
-// translate([-6,172,-48])
-// cube([4,20,50],center=true);
+translate([-6,172,-48])
+cube([4,20,50],center=true);
 
 
 
 
-// translate([-15,172,-65])
-// rotate([-90,180,0])
-// shoulder_joint();
+translate([-15,172,-65])
+rotate([-90,180,0])
+shoulder_joint();
 
 
 

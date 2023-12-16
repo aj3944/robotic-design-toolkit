@@ -20,7 +20,7 @@ from jax import grad,jacobian
 from pyassimp import load
 
 from quaternion import Quaternion as qt
-from quaternion import Haal
+from quaternion import Haal,Transformation
 
 from scipy.spatial.transform import Rotation as R
 
@@ -52,30 +52,32 @@ def deg2rad(a):
 def rad2deg(a):
     return a*180/pi
 
+# dh_string = """[
+#     [ 0, 0, 20 , -pi/2],
+#     [ 0, 0, 20 , 0],
+# ]"""
+# dh_string = """[
+#     [ pi/2, 0, 0 , pi/2],
+#     [ 0, 0, 40, 0 ],
+#     [ 0, 0, 20, 0],
+# ]"""
+# dh_string = """[
+#     [ 0, 7, 100 , -pi/2],
+#     [ -pi/2, 7, 10, pi/2 ],
+#     [ 0, -7, 200, 0],
+#     [ -pi, -7, 30, pi/2 ],
+#     [ pi/2, 7, 20, -pi],
+#     [ -pi/2, 7, 10, pi/2 ],
+# ]"""
 dh_string = """[
-    [ 0, 0, 20 , -pi/2],
-    [ 0, 0, 20 , 0],
+    [ 0, 10, 0 , -pi/2],
+    [ -pi/2, 0, 0, 0 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ 0, 0, 30, pi/2 ],
+    [ 0, 10 + 10, 20, -pi/2],
+    [ 0, 0, 30, pi/2 ],
+    [ 0, 10 + 0, 20, 0],
 ]"""
-# dh_string = """[
-#     [ -pi/2, 10, 0 , -pi/2],
-#     [ -pi/2, 0, 0, pi/2 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ -pi/2, 0, 30, pi/2 ],
-#     [ pi/2, 10 + 10, 20, -pi/3],
-#     [ -pi/2, 0, 30, pi/2 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ -pi/2, 0, 0, pi/2 ],
-#     [ pi/2, 10 + 10, 20, 0],
-# ]"""
-# dh_string = """[
-#     [ 0, 10, 0 , -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 0, 20, 0],
-# ]"""
 
 dh_table = eval(dh_string)
 
@@ -99,15 +101,22 @@ SCENE_1.add_object(my_manip.thing)
 def do_animation():
     global dh_table,joint_types,joint_values
     for i in range(len(joint_values)):
-        joint_values[i] += thread_len1       
+        joint_values[i] += thread_len1*10       
 
     my_manip.set_joint_angles(joint_values);
-    my_manip.do_fk(joint_values)
+    my_manip.FORWARD = my_manip.do_fk(joint_values)
+
+def make_ws():
+    global dh_table,joint_types,joint_values
+    my_manip.make_ws()
+    my_manip.WORKSPACE.print()
 
 
 def reset_sim():
     global dh_table,joint_types,joint_values
     joint_values =[ 0 for i in dh_table ] 
+    my_manip.init();
+    my_manip.make_manip(dh_table,joint_types);
     my_manip.set_joint_angles(joint_values);
 
 
@@ -202,7 +211,14 @@ label_C.grid(row=2, column=1)
 
 
 GOAL_POSITION = Haal()
+GOAL_POSITION.locate(40,40,40)
 
+# GOAL_POSITION = Transformation()
+        # pos = np.ndarray.flatten(fk_matrix[:-1,-1:])
+        # rota = R.from_matrix(fk_matrix[:3,:3])
+        # rot_vec = rota.as_rotvec(degrees = True)
+        # theta = np.linalg.norm(rot_vec)
+        # v = normalize(rot_vec)
 
 for i in range(2): #POSITION + ORIENTATION 
     text_edits_goals.append([])
@@ -335,7 +351,10 @@ def save_goal():
     for i in range(2): #POSITION + ORIENTATION 
         for j in range(3): #3D Universe!
             goal_param = float(text_edits_goals[i][j].get(1.0, tk.END))
-            GOAL_PARAMS[i][j] = goal_param
+            if i == 0:
+                GOAL_PARAMS[i][j] = goal_param
+            if i == 1:
+                GOAL_PARAMS[i][j] = deg2rad(goal_param)
 
     GOAL_POSITION.locate(*GOAL_PARAMS[0])
 
@@ -343,6 +362,23 @@ def save_goal():
     val = list(rota.as_quat())
     GOAL_POSITION.rotation_Q =  qt.from_value(val)
     _GOAL_SPHERE_.haal = GOAL_POSITION
+
+    gol_r = rota.as_matrix();
+    gol_p = GOAL_POSITION.position_P;
+
+    t_mat = [
+        [gol_r[0][0],gol_r[0][1],gol_r[0][2],gol_p[0]],
+        [gol_r[1][0],gol_r[1][1],gol_r[1][2],gol_p[1]],
+        [gol_r[2][0],gol_r[2][1],gol_r[2][2],gol_p[2]],
+        [0          ,0          ,0          ,1       ]
+    ]
+
+    goal_tansformation = Transformation.from_value(t_mat)
+
+
+    print(goal_tansformation)
+    my_manip.set_goal(goal_tansformation);
+
 
 def btn_draw_axes():
     my_manip.draw_axes_FLAG = not my_manip.draw_axes_FLAG
@@ -354,31 +390,63 @@ def btn_draw_links():
     my_manip.draw_link_FLAG = not my_manip.draw_link_FLAG
 
 def do_fk():
-    my_manip.do_fk(joint_values)
+    my_manip.do_fk(joint_values,True)
+
+
+def do_ik():
+    trnx = Transformation()
+
+
+    GOAL_QUAT = GOAL_POSITION.rotation_Q
+
+    GOAL_AXISANGLE = GOAL_QUAT.get_axisangle() 
+
+    ROTVEC = GOAL_AXISANGLE[0]*np.array(GOAL_AXISANGLE[1])
+    rot_goal = R.from_rotvec(ROTVEC)
+
+    r_mat = rot_goal.as_matrix()
+    # GOAL_POSITION.position_P
+    
+
+    position = GOAL_POSITION.position_P
+    
+    trans_matrix = [
+        [r_mat[0][0], r_mat[0][1], r_mat[0][2],  position[0]],
+        [r_mat[1][0], r_mat[1][1], r_mat[1][2],  position[1]],
+        [r_mat[2][0], r_mat[2][1], r_mat[2][2],  position[2]],
+        [0 ,0 ,0 ,1]
+    ]
+    loss = my_manip.do_ik(Transformation.from_value(trans_matrix))
+    print(loss)
+def btn_draw_ws():
+    my_manip.draw_WS = not my_manip.draw_WS
 
 
 
-
+T_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 viz_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
-btn_fwd_kin = tk.Button(viz_buttons, text="FK", command=do_fk)
-btn_inv_kin = tk.Button(viz_buttons, text="IK", command=do_fk)
-btn_pause = tk.Button(viz_buttons, textvariable=action_var, command=action_toggle)
+btn_fwd_kin = tk.Button(T_buttons, text="FK", command=do_fk)
+btn_inv_kin = tk.Button(T_buttons, text="IK", command=do_ik)
+btn_workspace = tk.Button(T_buttons, text="WS", command=make_ws)
+btn_pause = tk.Button(T_buttons, textvariable=action_var, command=action_toggle)
 # btn_play = tk.Button(viz_buttons, text="Play", command=play_sim)
-btn_reset = tk.Button(viz_buttons, text="Reset", command=reset_sim)
+btn_reset = tk.Button(T_buttons, text="Reset", command=reset_sim)
 
 btn_fwd_kin.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 btn_inv_kin.grid(row=1, column=0, sticky="ew", padx=5)
+btn_workspace.grid(row=2, column=0, sticky="ew", padx=5)
 
 
 
 
-btn_pause.grid(row=2, column=0, sticky="ew", padx=5)
 # btn_play.grid(row=3, column=0, sticky="ew", padx=5)
+btn_pause.grid(row=3, column=0, sticky="ew", padx=5)
 btn_reset.grid(row=4, column=0, sticky="ew", padx=5)
 
 btn_draw_axes = tk.Button(viz_buttons, text="Axes", command=btn_draw_axes)
 btn_draw_frames = tk.Button(viz_buttons, text="Frames", command=btn_draw_frames)
 btn_draw_links = tk.Button(viz_buttons, text="Links", command=btn_draw_links)
+btn_draw_links = tk.Button(viz_buttons, text="WS", command=btn_draw_ws)
 
 
 
@@ -412,7 +480,8 @@ fr_buttons.grid(row=0, column=0, sticky="ns")
 
 
 viz_robo.grid(row=1, column=1, sticky="nsew")
-viz_buttons.grid(row=1, column=0, sticky="ns")
+viz_buttons.grid(row=1, column=2, sticky="ns")
+T_buttons.grid(row=1, column=0, sticky="ns")
 
 
 
@@ -475,7 +544,7 @@ window.bind('<Button-4>', onZoom)
 viz_robo.mainloop()
 
 
-
+save_goal()
 
 # mainloop
 window.mainloop()
