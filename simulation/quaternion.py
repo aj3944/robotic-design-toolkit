@@ -26,7 +26,15 @@ class Quaternion:
         new_quaternion = Quaternion()
         new_quaternion._val = value
         return new_quaternion
-
+   def from_MATRIX(matrix):
+        new_quaternion = Quaternion()
+        w = math.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2])/2;
+        x = (matrix[2][1] - matrix[1][2])/(4*w)
+        y = (matrix[0][2] - matrix[2][0])/(4*w)
+        z = (matrix[1][0] - matrix[0][1])/(4*w)
+        value = np.array([w,x,y,z])
+        new_quaternion._val = value
+        return new_quaternion
     def _axisangle_to_q(self, theta, v):
         x = v[0]
         y = v[1]
@@ -50,6 +58,18 @@ class Quaternion:
         else:
             raise Exception("Multiplication with unknown type {type(b)}")
 
+    def __sub__(self, b):
+
+        if isinstance(b, Quaternion):
+            return self._q_dist(b)
+        elif isinstance(b, (list, tuple, np.ndarray)):
+            if len(b) != 3:
+                raise Exception("Input vector has invalid length {len(b)}")
+            return self._q_dist(b)
+        else:
+            raise Exception("Multiplication with unknown type {type(b)}")
+    def _q_dist(self,q2):
+        return 1 - np.dot(self._val,q2._val)**2;
     def _multiply_with_quaternion(self, q2):
         w1, x1, y1, z1 = self._val
         w2, x2, y2, z2 = q2._val

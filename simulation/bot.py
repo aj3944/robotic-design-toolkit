@@ -332,17 +332,20 @@ class Manipulator(object):
 
         conj_fk = self.do_fk(random_joint_value_conj).T_matrix()
         conj_point =  np.ndarray.flatten(conj_fk[:-1,-1:]);
+        conj_orientation =  conj_fk[:3,:3]
 
 
         random_fk = self.do_fk(random_joint_value).T_matrix()
         random_point =  np.ndarray.flatten(random_fk[:-1,-1:]);
+        random_orientation =  random_fk[:3,:3]
 
         curr_matrix = self.do_fk(self.joint_values).T_matrix()       
         curr_point = np.ndarray.flatten(curr_matrix[:-1,-1:]);
+        curr_orientation =  curr_matrix[:3,:3]
 
-        curr_pot = self.get_potential(curr_point);
-        random_pot = self.get_potential(random_point);
-        conj_pot = self.get_potential(conj_point);
+        curr_pot = self.get_potential(curr_point,curr_orientation);
+        random_pot = self.get_potential(random_point,random_orientation);
+        conj_pot = self.get_potential(conj_point,conj_orientation);
 
         print("POTENTIAL:",curr_pot)
         # print("POINT (CURR,RANDOM):",curr_point,random_point)
@@ -361,14 +364,24 @@ class Manipulator(object):
     def set_goal(self,goal):
         self.GOAL = goal;  
         print("<<<<<<<GOAL UPDATED>>>>>>",self.GOAL)
-    def get_potential(self,point):
+    def get_potential(self,point,rota_matx):
         goal_matrix = self.GOAL.T_matrix();
         # print(goal_matrix)
         goal_point = np.ndarray.flatten(goal_matrix[:-1,-1:]);
         dist = np.linalg.norm((goal_point - point));
 
+        goal_orientation = np.ndarray.flatten(goal_matrix[:3,:3]);
 
-        return -1/(dist + 0.00001);
+
+        Q1 = qt.from_MATRIX(goal_orientation);
+
+        Q2 = qt.from_MATRIX(rota_matx);
+        rota_dist = Q1 - Q2;
+
+
+
+
+        return -1/(dist + rota_dist + 0.00001);
     def do_id(self,wrench_force):
         pass
     def compute_ws(self):
