@@ -9,6 +9,9 @@ from quaternion import Haal,Transformation
 
 from bhram import Thing,Scene
 from math import sin, cos, acos, sqrt
+import math 
+
+from numpy import log as ln
 
 from scipy.spatial.transform import Rotation as R
 import random
@@ -61,6 +64,8 @@ class Manipulator(object):
         self.GOAL = Transformation()
         self.MOMENTS = []
         self.O_T_i = []
+        self.POT = 1;
+        self.POT_Q = 1;
     def calculate_jacobian(self):
         self.do_fk(self.joint_values,True);
         print(self.O_T_i)
@@ -310,10 +315,56 @@ class Manipulator(object):
     def del_angs(self,goal):
         pass
     def do_ik(self,goal):
-        for i in range(100):
-            # loss = self.get_next_point( 1 - (i/2000))
-            loss = self.get_next_point( 0.01)
-        return loss
+        # for k in range(100):
+        sgm = lambda x: -1 / (1 + math.exp(x))
+        ita = 0;
+        loss = 0;
+        while loss >= -1 and ita < 100:
+            loss = self.get_next_point()
+            print("POT",sgm(self.POT))
+            ita += 1
+
+        loss = 0;
+        while loss >= -1 and ita < 100:
+            loss = self.get_next_point_Q()
+            print("POT_Q",sgm(self.POT_Q))
+            ita += 1
+    def get_next_point_Q(self,step = 0.001):
+
+        rands = [random.random()*step for i in self.joint_values]
+
+        random_joint_value = [ i + j for i,j in zip(self.joint_values,rands)];
+        random_joint_value_conj = [ i - j for i,j in zip(self.joint_values,rands)];
+
+
+        conj_fk = self.do_fk(random_joint_value_conj).T_matrix()
+        conj_point =  np.ndarray.flatten(conj_fk[:-1,-1:]);
+        conj_orientation =  conj_fk[:3,:3]
+
+        random_fk = self.do_fk(random_joint_value).T_matrix()
+        random_point =  np.ndarray.flatten(random_fk[:-1,-1:]);
+        random_orientation =  random_fk[:3,:3]
+
+        curr_matrix = self.do_fk(self.joint_values).T_matrix()       
+        curr_point = np.ndarray.flatten(curr_matrix[:-1,-1:]);
+        curr_orientation =  curr_matrix[:3,:3]
+
+        curr_pot_Q = self.get_potential_Q(curr_point,curr_orientation);
+        random_pot_Q = self.get_potential_Q(random_point,random_orientation);
+        conj_pot_Q = self.get_potential_Q(conj_point,conj_orientation);
+
+
+        self.POT_Q = curr_pot_Q;
+
+        if curr_pot_Q > random_pot_Q:
+            self.set_joint_angles(random_joint_value)
+            loss = random_pot_Q
+            return loss
+        else:
+            self.set_joint_angles(random_joint_value_conj)
+            loss = conj_pot_Q
+            return loss            
+        return 9999 
     def get_next_point(self,step = 0.01):
         # random_axis = int(random.random()*len(self.DH_PARAMETERS));
 
@@ -343,45 +394,66 @@ class Manipulator(object):
         curr_point = np.ndarray.flatten(curr_matrix[:-1,-1:]);
         curr_orientation =  curr_matrix[:3,:3]
 
-        curr_pot = self.get_potential(curr_point,curr_orientation);
-        random_pot = self.get_potential(random_point,random_orientation);
-        conj_pot = self.get_potential(conj_point,conj_orientation);
+        curr_pot = self.get_potential_P(curr_point,curr_orientation);
+        random_pot = self.get_potential_P(random_point,random_orientation);
+        conj_pot = self.get_potential_P(conj_point,conj_orientation);
 
-        print("POTENTIAL:",curr_pot)
-        # print("POINT (CURR,RANDOM):",curr_point,random_point)
 
-        # print("POTENTIAL (CURR,RANDOM):",curr_pot,random_pot)
+        # curr_pot_Q = self.get_potential_Q(curr_point,curr_orientation);
+        # random_pot_Q = self.get_potential_Q(random_point,random_orientation);
+        # conj_pot_Q = self.get_potential_Q(conj_point,conj_orientation);
+
+
+        self.POT = curr_pot;
 
         if curr_pot > random_pot:
-            print("WENT FORWAD")
             self.set_joint_angles(random_joint_value)
             loss = random_pot
+            return loss
         else:
-            print("WENT CONJUGATE")
-            self.set_joint_angles(random_joint_value_conj)         
+            self.set_joint_angles(random_joint_value_conj)
             loss = conj_pot
-        return loss 
+            return loss            
+        return 9999 
     def set_goal(self,goal):
         self.GOAL = goal;  
         print("<<<<<<<GOAL UPDATED>>>>>>",self.GOAL)
-    def get_potential(self,point,rota_matx):
+    def get_potential_P(self,point,rota_matx):
         goal_matrix = self.GOAL.T_matrix();
         # print(goal_matrix)
         goal_point = np.ndarray.flatten(goal_matrix[:-1,-1:]);
         dist = np.linalg.norm((goal_point - point));
 
-        goal_orientation = np.ndarray.flatten(goal_matrix[:3,:3]);
+        goal_orientation = goal_matrix[:3,:3];
 
-
+        # print(goal_orientation)
         Q1 = qt.from_MATRIX(goal_orientation);
 
         Q2 = qt.from_MATRIX(rota_matx);
-        rota_dist = Q1 - Q2;
 
 
+        pota = -1/(dist + 0.001);
+        rota = 0.01*-1/(Q1.dist(Q2) + 0.1);
+        
+        return pota;
+    def get_potential_Q(self,point,rota_matx):
+        goal_matrix = self.GOAL.T_matrix();
+        # print(goal_matrix)
+        goal_point = np.ndarray.flatten(goal_matrix[:-1,-1:]);
+        dist = np.linalg.norm((goal_point - point));
+
+        goal_orientation = goal_matrix[:3,:3];
+
+        # print(goal_orientation)
+        Q1 = qt.from_MATRIX(goal_orientation);
+
+        Q2 = qt.from_MATRIX(rota_matx);
 
 
-        return -1/(dist + rota_dist + 0.00001);
+        pota = -1/(dist + 0.001);
+        rota = -1/(Q1.dist(Q2) + 0.1);
+        
+        return rota;
     def do_id(self,wrench_force):
         pass
     def compute_ws(self):

@@ -26,9 +26,10 @@ class Quaternion:
         new_quaternion = Quaternion()
         new_quaternion._val = value
         return new_quaternion
-   def from_MATRIX(matrix):
+    def from_MATRIX(matrix):
+        # print(matrix)
         new_quaternion = Quaternion()
-        w = math.sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2])/2;
+        w = sqrt(1 + matrix[0][0] + matrix[1][1] + matrix[2][2])/2 + 0.000001;
         x = (matrix[2][1] - matrix[1][2])/(4*w)
         y = (matrix[0][2] - matrix[2][0])/(4*w)
         z = (matrix[1][0] - matrix[0][1])/(4*w)
@@ -68,6 +69,11 @@ class Quaternion:
             return self._q_dist(b)
         else:
             raise Exception("Multiplication with unknown type {type(b)}")
+    def dist(self, b):
+        A = self._val
+        B = b._val
+        # print(A,B)
+        return 1 - np.dot(A,B)**2;
     def _q_dist(self,q2):
         return 1 - np.dot(self._val,q2._val)**2;
     def _multiply_with_quaternion(self, q2):
@@ -135,7 +141,7 @@ class Transformation(object):
 
         new_t = Transformation();
         new_t.T = np.array(T);
-        print(T)
+        # print(T)
         new_t.rotation = R.from_matrix(new_t.T[:3,:3]);
         new_t.translation = list(np.ndarray.flatten(new_t.T[:-1,-1:]));
         return new_t;

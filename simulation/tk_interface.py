@@ -211,6 +211,7 @@ label_C.grid(row=2, column=1)
 
 
 GOAL_POSITION = Haal()
+GOAL_POSITION.rotation_Q = qt.from_axisangle(pi/4,[1,1,1]);
 GOAL_POSITION.locate(40,40,40)
 
 # GOAL_POSITION = Transformation()
