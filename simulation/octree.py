@@ -52,18 +52,18 @@ class o_tree(object):
 			if i and (i.leaf or i.branch):
 				i.draw()
 		# print(self.com)
-		# if self.branch:	
-		# 	glPushMatrix()
-		# 	glColor3f(0.0, 1.0, 0.);
-		# 	glTranslatef(*self.root)
-		# 	glutWireCube(self.size)
-		# 	glPopMatrix()
-		if self.leaf:	
+		if self.branch:	
 			glPushMatrix()
-			glColor3f(0, 1.0, 0.);
-			glTranslatef(*self.com)
-			glutWireCube(1)
+			glColor3f(0.0, 1.0, 0.);
+			glTranslatef(*self.root)
+			glutWireCube(self.size)
 			glPopMatrix()
+		# if self.leaf:	
+		# 	glPushMatrix()
+		# 	glColor3f(0, 1.0, 0.);
+		# 	glTranslatef(*self.com)
+		# 	glutWireCube(1)
+		# 	glPopMatrix()
 class OxTree(object):
 	def __init__(self):
 		self.depth = 1;
