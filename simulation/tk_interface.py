@@ -52,48 +52,31 @@ def deg2rad(a):
 def rad2deg(a):
     return a*180/pi
 
-dh_string = """[
-    [ 0, 0, 20 , -pi/2],
-    [ 0, 0, 20 , 0],
-]"""
+# dh_string = """[
+#     [ 0, 0, 20 , -pi/2],
+#     [ 0, 0, 20 , 0],
+# ]"""
 # dh_string = """[
 #     [ pi/2, 0, 0 , pi/2],
 #     [ 0, 0, 40, 0 ],
 #     [ 0, 0, 20, 0],
 # ]"""
-# dh_string = """[
-#     [ 0, 7, 100 , -pi/2],
-#     [ -pi/2, 7, 10, pi/2 ],
-#     [ 0, -7, 200, 0],
-#     [ -pi, -7, 30, pi/2 ],
-#     [ pi/2, 7, 20, -pi],
-#     [ -pi/2, 7, 10, pi/2 ],
-# ]"""
-# dh_string = """[
-#     [ 0, 10, 0 , -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ -pi/2, 0, 0, 0 ],
-#     [ pi/2, 10 + 0, 20, 0],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 10, 20, -pi/2],
-#     [ 0, 0, 30, pi/2 ],
-#     [ 0, 10 + 0, 20, 0],
-# ]"""
+dh_string = """[
+    [ 0, 10, 0 , -pi/2],
+    [ -pi/2, 0, 0, 0 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ 0, 0, 30, pi/2 ],
+    [ 0, 10 + 10, 20, -pi/2],
+    [ -pi/2, 0, 0, 0 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ 0, 0, 30, pi/2 ],
+    [ 0, 10 + 10, 20, -pi/2],
+    [ -pi/2, 0, 0, 0 ],
+    [ pi/2, 10 + 0, 20, 0],
+    [ 0, 0, 30, pi/2 ],
+    [ 0, 10 + 10, 20, -pi/2],
+    [ -pi/2, 0, 0, 0 ],
+]"""
 
 dh_table = eval(dh_string)
 
@@ -437,13 +420,15 @@ def do_ik():
     print(loss)
 def btn_draw_ws():
     my_manip.draw_WS = not my_manip.draw_WS
-
+def ik_mode():
+    my_manip.use_jacobian_ik()
 
 
 T_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 viz_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 btn_fwd_kin = tk.Button(T_buttons, text="FK", command=do_fk)
 btn_inv_kin = tk.Button(T_buttons, text="IK", command=do_ik)
+btn_inv_kin_mode = tk.Button(T_buttons, text="IK Mode", command=ik_mode)
 btn_workspace = tk.Button(T_buttons, text="WS", command=make_ws)
 btn_pause = tk.Button(T_buttons, textvariable=action_var, command=action_toggle)
 # btn_play = tk.Button(viz_buttons, text="Play", command=play_sim)
@@ -451,7 +436,8 @@ btn_reset = tk.Button(T_buttons, text="Reset", command=reset_sim)
 
 btn_fwd_kin.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 btn_inv_kin.grid(row=1, column=0, sticky="ew", padx=5)
-btn_workspace.grid(row=2, column=0, sticky="ew", padx=5)
+btn_inv_kin_mode.grid(row=2, column=0, sticky="ew", padx=5)
+btn_workspace.grid(row=3, column=0, sticky="ew", padx=5)
 
 
 
