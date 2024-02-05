@@ -67,12 +67,6 @@ dh_string = """[
     [ pi/2, 10 + 0, 20, 0],
     [ 0, 0, 30, pi/2 ],
     [ 0, 10 + 10, 20, -pi/2],
-    [ -pi/2, 0, 0, 0 ],
-    [ pi/2, 10 + 0, 20, 0],
-    [ 0, 0, 30, pi/2 ],
-    [ 0, 10 + 10, 20, -pi/2],
-    [ -pi/2, 0, 0, 0 ],
-    [ pi/2, 10 + 0, 20, 0],
     [ 0, 0, 30, pi/2 ],
     [ 0, 10 + 10, 20, -pi/2],
     [ -pi/2, 0, 0, 0 ],
@@ -420,42 +414,51 @@ def do_ik():
     print(loss)
 def btn_draw_ws():
     my_manip.draw_WS = not my_manip.draw_WS
+def btn_draw_traj():
+    my_manip.draw_traj_FLAG = not my_manip.draw_traj_FLAG
 def ik_mode():
     my_manip.use_jacobian_ik()
+def ik_pool():
+    my_manip.use_pooling_ik
 
 
 T_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
 viz_buttons = tk.Frame(window, relief=tk.RAISED, bd=2)
+
+
 btn_fwd_kin = tk.Button(T_buttons, text="FK", command=do_fk)
 btn_inv_kin = tk.Button(T_buttons, text="IK", command=do_ik)
 btn_inv_kin_mode = tk.Button(T_buttons, text="IK Mode", command=ik_mode)
+btn_inv_kin_pool = tk.Button(T_buttons, text="IK Pool", command=ik_pool)
 btn_workspace = tk.Button(T_buttons, text="WS", command=make_ws)
 btn_pause = tk.Button(T_buttons, textvariable=action_var, command=action_toggle)
-# btn_play = tk.Button(viz_buttons, text="Play", command=play_sim)
 btn_reset = tk.Button(T_buttons, text="Reset", command=reset_sim)
 
 btn_fwd_kin.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 btn_inv_kin.grid(row=1, column=0, sticky="ew", padx=5)
 btn_inv_kin_mode.grid(row=2, column=0, sticky="ew", padx=5)
-btn_workspace.grid(row=3, column=0, sticky="ew", padx=5)
+btn_inv_kin_pool.grid(row=3, column=0, sticky="ew", padx=5)
+btn_workspace.grid(row=4, column=0, sticky="ew", padx=5)
 
 
 
 
 # btn_play.grid(row=3, column=0, sticky="ew", padx=5)
-btn_pause.grid(row=3, column=0, sticky="ew", padx=5)
-btn_reset.grid(row=4, column=0, sticky="ew", padx=5)
+btn_pause.grid(row=5, column=0, sticky="ew", padx=5)
+btn_reset.grid(row=6, column=0, sticky="ew", padx=5)
 
 btn_draw_axes = tk.Button(viz_buttons, text="Axes", command=btn_draw_axes)
 btn_draw_frames = tk.Button(viz_buttons, text="Frames", command=btn_draw_frames)
+btn_draw_traj = tk.Button(viz_buttons, text="Trajectory", command=btn_draw_traj)
 btn_draw_links = tk.Button(viz_buttons, text="Links", command=btn_draw_links)
-btn_draw_links = tk.Button(viz_buttons, text="WS", command=btn_draw_ws)
+btn_draw_ws = tk.Button(viz_buttons, text="WS", command=btn_draw_ws)
 
 
 
 btn_draw_axes.grid(row=2, column=1, sticky="ew", padx=5)
 btn_draw_frames.grid(row=3, column=1, sticky="ew", padx=5)
 btn_draw_links.grid(row=4, column=1, sticky="ew", padx=5)
+btn_draw_traj.grid(row=5, column=1, sticky="ew", padx=5)
 
 
 

@@ -27,10 +27,15 @@ def normalize(v):
         norm=np.finfo(v.dtype).eps
     return v/norm
 
+def cos_dist( A, B ):
+    """ comment cos between vectors or matrices """
+    Aflat = A.reshape(-1)  # views
+    Bflat = B.reshape(-1)
+    return (np.dot( Aflat, Bflat )
+        / max( np.linalg.norm(Aflat) * np.linalg.norm(Bflat), 1e-10 ))
 
-
-
-
+def avg( A ,B):
+    return [(a+b)/2 for a,b in zip(A,B)]
 
 class Manipulator(object):
 
@@ -43,10 +48,12 @@ class Manipulator(object):
         self.draw_axes_FLAG = False;
         self.draw_frames_FLAG = False;
         self.draw_link_FLAG = True;
+        self.draw_traj_FLAG = True;
         self.draw_FK = True;
         self.anim_IK = False;
         self.draw_WS = True;
         self.USE_JACOBIAN = False;
+        self.USE_POOLING = False;
         self.c_quadric = gluNewQuadric()
         self.s_quadric = gluNewQuadric()
         self.WORKSPACE = Otree()
@@ -63,6 +70,7 @@ class Manipulator(object):
         self.TORQUES = []
         self.MASSES = []
         self.GOAL = Transformation()
+        self.TRAJECTORY = []
         self.MOMENTS = []
         self.O_T_i = []
         self.POT = 1;
@@ -99,7 +107,7 @@ class Manipulator(object):
             self.frames.append(Haal())
             # if i > 0 :
             self.joint_values.append(0)
-            self.joint_limits.append([-math.pi,math.pi])
+            self.joint_limits.append([-math.pi/2,math.pi/2])
             self.links.append(JOINT_TYPES[i - 1])
             self.DH_PARAMETERS.append(DH_TABLE[i])
             self.TORQUES.append(0)
@@ -107,11 +115,13 @@ class Manipulator(object):
             self.MOMENTS.append(1)
         
         self.calculate_jacobian()
-    def set_joint_angles(self,joint_angles):
+    def set_joint_angles(self,joint_angles,fk= False):
         if not len(joint_angles) == len(self.joint_values):
             return 
         else:
             self.joint_values = joint_angles
+            if fk:
+                self.do_fk(joint_angles,True)
     def random_joint_values(self):
         def rajl(ll, ul):
             r = random.random()
@@ -167,6 +177,23 @@ class Manipulator(object):
     def draw_func(self):
         if self.draw_FK :
             self.draw_fk(self.FORWARD);
+
+        if self.draw_traj_FLAG:
+            for i in self.TRAJECTORY:
+                t_matrix = i.T_matrix()
+                # print(i)
+                fk_matrix = np.array(t_matrix);
+                pos = np.ndarray.flatten(fk_matrix[:-1,-1:])
+                rota = R.from_matrix(fk_matrix[:3,:3])
+                rot_vec = rota.as_rotvec(degrees = True)
+                theta = np.linalg.norm(rot_vec)
+                v = normalize(rot_vec)
+                glPushMatrix()
+                glTranslatef(pos[0],pos[1],pos[2])
+                glRotatef(theta,v[0],v[1],v[2])
+                glColor3f(1.0, 0.0, 0.);
+                glutWireCube(1)
+                glPopMatrix()
             
         if self.anim_IK:
             self.do_ik()
@@ -199,6 +226,7 @@ class Manipulator(object):
         glTranslatef(-link_len/2,0,0)
         # glTranslatef(0.,0.)
         # glTranslatef(0.,5.,0.)
+
 
         if self.draw_axes_FLAG:
             glPushMatrix()
@@ -322,24 +350,48 @@ class Manipulator(object):
         pass
     def use_jacobian_ik(self):
         self.USE_JACOBIAN = not self.USE_JACOBIAN;
+    def use_pooling_ik(self):
+        self.USE_POOLING = not self.USE_POOLING;
+    def joint_diff(self,q1,q2):
+        d = np.linalg.norm(np.array([x-y for x,y in zip(q1,q2)]))
+        # print("j_diff",d)
+        return d
     def do_ik(self,goal = False):
         # for k in range(100):
         if goal:
             self.GOAL = goal; 
             self.anim_IK = not self.anim_IK;  
 
-        if not self.USE_JACOBIAN:
-            self.get_next_point(self.ANNEAL)
-        else:
-            self.get_lang_point()
+        # if not self.USE_JACOBIAN:
+        #     j_val_a = self.get_next_point(self.ANNEAL)
+        # else:
+        #     j_val_b = self.get_lang_point()
+        j_val_a = self.get_next_point(0.001)
+        j_val_b = self.get_lang_point(0.00001)
+
+        j_val_a = np.array(j_val_a)
+        j_val_b = np.array(j_val_b)
         # sgm = lambda x: -1 / (1 + math.exp(x))
         # ita = 0;
         lossA = -100;
         lossB = -100;
         # move_iter = 0;
         # lossA,lossB = self.get_next_point(0.001)
+        if self.USE_POOLING:
+            self.set_joint_angles(avg(j_val_a,j_val_b),True)
+        elif self.USE_JACOBIAN:
+            self.set_joint_angles(j_val_b,True)
+        else:
+            self.set_joint_angles(j_val_a,True)   
+
+
+        self.TRAJECTORY.append(self.do_fk(self.joint_values))
+        # if self.joint_diff(j_val_a,self.joint_values) <  self.joint_diff(j_val_b,self.joint_values):
+        #     self.set_joint_angles(j_val_a,True)
+        # else:
+        #     self.set_joint_angles(j_val_b,True)        
         return (lossA,lossB)
-    def get_lang_point(self):
+    def get_lang_point(self,delta = 0.00001):
         # print(self.JACOBIAN)
 
         small_dels = [0 for x in self.JACOBIAN]
@@ -349,14 +401,23 @@ class Manipulator(object):
         goal_orientation = goal_matrix[:3,:3];
 
         curr_matrix = self.FORWARD.T_matrix();
-        curr_point = np.ndarray.flatten(goal_matrix[:-1,-1:]);
+        curr_point = np.ndarray.flatten(curr_matrix[:-1,-1:]);
         curr_orientation = goal_matrix[:3,:3];
 
-        diffs = [ goal_point[i] for  i in range(len(goal_point))]
+        error_3D = [  goal_point[i] - curr_point[i] for  i in range(len(goal_point))]
 
-        for j in self.JACOBIAN:
-            pass
-        return 0
+        error_ROT = cos_dist(goal_matrix,curr_matrix)
+
+        initial_joint_value = [ i for i in self.joint_values];
+
+        print(error_3D)
+
+        for j in range(len(self.JACOBIAN)):
+            for i in range(3):
+                initial_joint_value[j] += self.JACOBIAN[j][i]*error_3D[i]*delta
+
+        return initial_joint_value
+        # self.set_joint_angles(initial_joint_value,True)
     def get_next_point(self,step = 0.01):
         # random_axis = int(random.random()*len(self.DH_PARAMETERS));
 
@@ -408,19 +469,23 @@ class Manipulator(object):
         # print("loss_position","{:.5f}".format(loss_position),"\tloss_orientation","{:.5f}".format(loss_orientation))
         # tolerance_position = 0.00001
         # tolerance_orientation = 0.001
+
+        next_val = []
         if loss_position < 0:
-            self.set_joint_angles(random_joint_value_conj)
+            # self.set_joint_angles(random_joint_value_conj)
+            next_val = random_joint_value_conj
         else:
-            self.set_joint_angles(random_joint_value)
+            # self.set_joint_angles(random_joint_value)
+            next_val = random_joint_value
         if self.POT > -100:
-            print(self.POT)
-            return (random_pot,random_pot_Q)
+            # print(self.POT)
+            return next_val
 
 
-        rands_2 = [ 0 if i > 3 else random.random() for i in range(len(self.joint_values),0,-1)]
+        rands_2 = [ 0 if i > 3 else random.random() for i in range(len(next_val),0,-1)]
 
-        random_joint_value = [ i + j for i,j in zip(self.joint_values,rands_2)];
-        random_joint_value_conj = [ i - j for i,j in zip(self.joint_values,rands_2)];
+        random_joint_value = [ i + j for i,j in zip(next_val,rands_2)];
+        random_joint_value_conj = [ i - j for i,j in zip(next_val,rands_2)];
 
         random_fk = self.do_fk(random_joint_value).T_matrix()
         random_point =  np.ndarray.flatten(random_fk[:-1,-1:]);
@@ -445,18 +510,21 @@ class Manipulator(object):
 
 
         self.POT_Q = curr_pot_Q;
-        print(self.POT_Q)
+        # print(self.POT_Q)
 
         loss_position = (curr_pot - random_pot)
         loss_orientation = (curr_pot_Q - random_pot_Q)
 
         # print("Q loss_position","{:.5f}".format(loss_position),"\tloss_orientation","{:.5f}".format(loss_orientation))
         if loss_orientation < 0:
-            self.set_joint_angles(random_joint_value_conj)
-            return (conj_random_pot,conj_random_pot_Q)
+            # self.set_joint_angles(random_joint_value_conj)
+            next_val = random_joint_value_conj
+            # return (conj_random_pot,conj_random_pot_Q)
         else:
-            self.set_joint_angles(random_joint_value)
-            return (random_pot,random_pot_Q)
+            # self.set_joint_angles(random_joint_value)
+            next_val = random_joint_value
+            # return (random_pot,random_pot_Q)
+        return next_val
     def set_goal(self,goal):
         self.GOAL = goal;  
         print("<<<<<<<GOAL UPDATED>>>>>>",self.GOAL)
