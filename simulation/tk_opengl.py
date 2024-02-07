@@ -36,7 +36,8 @@ from whiteroom import Room,thread_len1
 
 class AppOgl(OpenGLFrame):
     # def __init__(self,Scene):
-    #   self.scene = Scene
+    #   # self.scene = Scene()
+    #   self.room = Room()
 
     def initgl(self):
         """Initalize gl states when the frame is created"""
@@ -44,6 +45,8 @@ class AppOgl(OpenGLFrame):
         # GL.glClearColor(0.0, 1.0, 0.0, 0.0) 
         self.start = time.time()
         self.nframes = 0
+        # self.room = Room()   
+
     def set_scene(self,SCENE):
         self.room = Room(SCENE)   
 
@@ -70,7 +73,8 @@ if __name__ == '__main__':
     app.pack(fill=tkinter.BOTH, expand=tkinter.YES)
     app.animate = 1
     app.after(100, app.printContext)
-
+    SCENE_1 = Scene()
+    app.set_scene(SCENE_1)
 
     def onKeyPress(event):
         print('\t\tYou pressed %s\n' % (event.char, ))

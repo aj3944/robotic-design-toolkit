@@ -45,6 +45,7 @@ class Scene(object):
     def make_scene(self,depth=0):
         if depth > 10:
             return
+        # print([x.draw_function for x in self.objects])
         glPushMatrix()
         glTranslatef(self.coordinates[0],self.coordinates[1],self.coordinates[2])
         for o in self.objects:
